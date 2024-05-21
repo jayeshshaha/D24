@@ -26,8 +26,8 @@ export class TaskService {
 
   
 
-  addTask(data:Task):Observable<Task[]>{
-    return this.http.post<Task[]>(this.apiUrl,data);
+  addTask(data:Task):Observable<Task>{
+    return this.http.post<Task>(this.apiUrl,data);
   }
 
 }
@@ -79,13 +79,7 @@ import { NgForm } from '@angular/forms';
 })
 export class TaskListComponent implements OnInit {
 
-tasks:Task[]=[];
-
-  newTask:any = {
-    id:0,
-    title:"",
-    description:""
-  }
+tasks:Task[] = [];
 
   constructor(private selectedTask:TaskService) {
    }
@@ -93,16 +87,21 @@ tasks:Task[]=[];
   ngOnInit(): void {
     this.loadTasks();
   }
+  
+  newTask:Task = {
+    id:0,
+    title:"",
+    description:""
+  }
 
   addTask(form:NgForm){
-    console.warn(this.newTask);
+    // this.newTask.id = this.tasks.length + 1;
     this.selectedTask.addTask(this.newTask);
-
   }
 
   loadTasks(){
     this.selectedTask.getTasks().subscribe((data)=>{
-      console.warn("data:", data);
+      console.log("data ",data);
       this.tasks = data;
     })
   }
