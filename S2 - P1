@@ -1,0 +1,193 @@
+Model
+--------------------------------------------------------
+export interface Event {
+    id?:number;
+    name:string;
+    date:string;
+    location:string;
+    description:string;
+    isEditing?:boolean;
+}
+
+Service 
+--------------------------------------------------------
+
+import { Injectable } from '@angular/core';
+import {HttpClient} from '@angular/common/http'
+import { Observable } from 'rxjs';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class EventService {
+  
+  public backendUrl = "https://ide-faaeeafddb313124768bbefcdcfdfone.premiumproject.examly.io/proxy/3001/events";
+  constructor(private http : HttpClient) { }
+
+  getEvents():Observable<Event[]>{
+    return this.http.get<Event[]>(this.backendUrl);
+  }
+
+  addEvent(obj:any){
+    console.warn("Data here",obj);
+    const jsonData = {
+      "name":obj.name,
+      "date":obj.date,
+      "location":obj.location,
+      "description":obj.description,
+    };
+    console.warn(jsonData);
+      return this.http.post(this.backendUrl,jsonData);
+  }
+  
+}
+
+add-event.html
+--------------------------------------------------------
+
+<form [formGroup]="eventForm" (ngSubmit)="addNewEvent()">
+
+    <div>
+        <label for="name">Event Name: </label>
+        <input type="text" formControlName="name">
+        <div *ngIf="name.invalid && name.touched" >
+            <span >Name should exceed 6 characters.</span>
+        </div>
+    </div>
+    <div>
+        <label for="date">Event Date: </label>
+        <input type="text" formControlName="date">
+        <div *ngIf="date.invalid && date.touched">
+            <span>Invalid date format(yyyy-mm-dd).</span>
+        </div>
+    </div>
+
+    <div>
+        <label for="location">Event Location: </label>
+        <input type="text" formControlName="location">
+        <div *ngIf="location.invalid && location.touched">
+            <span>Location is required.</span>
+        </div>
+    </div>
+
+    <div>
+        <label for="description">Event Description: </label>
+        <input type="text" formControlName="description">
+        <div *ngIf="description.invalid && description.touched">
+            <span>Description is required.</span>
+        </div>
+    </div>
+    <br>
+
+    <button type="submit" [disabled]="eventForm.invalid" >Submit</button>
+</form>
+
+add-event.ts
+--------------------------------------------------------
+
+import { Component, OnInit } from '@angular/core';
+import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { EventService } from '../services/event.service';
+
+@Component({
+  selector: 'app-add-event',
+  templateUrl: './add-event.component.html',
+  styleUrls: ['./add-event.component.css']
+})
+export class AddEventComponent implements OnInit {
+
+  constructor(private eventData:EventService) { }
+
+
+  ngOnInit(): void {
+  }
+   
+  eventForm:FormGroup = new FormGroup({
+    name: new FormControl("",[Validators.required,Validators.minLength(6)]),
+    date: new FormControl("",[Validators.required]),
+    location: new FormControl("",[Validators.required]),
+    description: new FormControl("",[Validators.required])
+  });
+
+  get name(){
+    return this.eventForm.get("name");
+  }
+
+  get date(){
+    return this.eventForm.get("date");
+  }
+
+  get location(){
+    return this.eventForm.get("location");
+  }
+
+  get description(){
+    return this.eventForm.get("description");
+  }
+
+
+  addNewEvent(){
+    this.eventData.addEvent(this.eventForm.value).subscribe((res)=>{
+      console.log('Response from the server:', res);
+      this.eventData.getEvents();
+    })
+
+    console.log(this.eventForm.value);
+  }
+
+}
+
+event-list.html
+--------------------------------------------------------
+
+<p>event-list works!</p>
+<table border="1">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Date</th>
+            <th>Location</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr *ngFor="let i of events">
+            <td>{{i.name}}</td>
+            <td>{{i.date}}</td>
+            <td>{{i.location}}</td>
+            <td>{{i.description}}</td>
+        </tr>
+    </tbody>
+</table>
+
+event-list.ts
+--------------------------------------------------------
+
+import { Component, OnInit } from '@angular/core';
+import { EventService } from '../services/event.service';
+
+@Component({
+  selector: 'app-event-list',
+  templateUrl: './event-list.component.html',
+  styleUrls: ['./event-list.component.css']
+})
+export class EventListComponent implements OnInit {
+
+  events:Event[] = [];
+
+  constructor(private eventsData:EventService ) { }
+
+
+  ngOnInit(): void {
+    this.getEvents();
+  }
+  
+  getEvents(){
+    this.eventsData.getEvents().subscribe((data)=>{
+      console.log("data:",data);
+      this.events = data;
+    })
+  }
+
+}
+
