@@ -25,12 +25,14 @@ export class TaskService {
   }
 
   
-
-  addTask(data:Task):Observable<Task>{
-    return this.http.post<Task>(this.apiUrl,data);
+  addTask(data:Task):Observable<any>{
+    console.warn("Hello",data);
+    var jsonObj={"title":data.title,"description":data.description};
+    return this.http.post<any>(this.apiUrl,jsonObj);
   }
-
 }
+
+
 ------------------------------------------------------------------
 
 <h2>Task List</h2>
@@ -95,8 +97,10 @@ tasks:Task[] = [];
   }
 
   addTask(form:NgForm){
-    // this.newTask.id = this.tasks.length + 1;
-    this.selectedTask.addTask(this.newTask);
+    this.selectedTask.addTask(this.newTask).subscribe(()=>{
+      this.loadTasks();
+      console.log("Added task.");
+    })
   }
 
   loadTasks(){
