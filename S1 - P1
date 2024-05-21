@@ -1,0 +1,109 @@
+export interface Task{
+    id:number;
+    title:string;
+    description:string;
+}
+
+Service
+---------------------------------------------------------------------
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Task } from '../model/task.model';
+import { Observable } from 'rxjs';
+
+
+@Injectable({
+  providedIn: 'root'
+})
+export class TaskService {
+  public apiUrl = "https://ide-faaeeafddb313116746dcbababacbbone.premiumproject.examly.io/proxy/3001/tasks";
+
+  constructor(private http:HttpClient) { }
+
+  getTasks():Observable<Task[]>{
+    return this.http.get<Task[]>(this.apiUrl);
+  }
+
+  
+
+  addTask(data:Task):Observable<Task[]>{
+    return this.http.post<Task[]>(this.apiUrl,data);
+  }
+
+}
+------------------------------------------------------------------
+
+<h2>Task List</h2>
+<ul>
+  
+    <li *ngFor="let i of tasks">{{i.title + " - " + i.description}}</li>
+</ul>
+
+<h2>Add Task</h2>
+<form #task="ngForm" (ngSubmit)="addTask(task.vaue)">
+    <div>
+        <label for="title">Title:</label>
+        <br>
+        <input type="text" name="title"  required="true" #title="ngModel" [(ngModel)]="newTask.title" >
+        <div *ngIf="title.touched && title.invalid">
+            <span>Title is required.</span>
+        </div>
+    </div>
+    <br>
+    <div>
+        <label for="description">Description:</label>
+        <br>
+        <textarea name="description"  cols="30" rows="6" required="true" #description="ngModel"  [(ngModel)]="newTask.description" ></textarea>
+        <div *ngIf="description.touched && description.invalid">
+            <span>Description is required.</span>
+        </div>
+    </div>
+    <br>
+
+    <button type="submit" [disabled]="task.invalid">Add Task</button>
+</form>
+
+
+
+-----------------------------------------------------------------------------
+
+import { Component, OnInit } from '@angular/core';
+import { Task } from '../model/task.model';
+import { TaskService } from '../services/task.service';
+import { NgForm } from '@angular/forms';
+
+@Component({
+  selector: 'app-task-list',
+  templateUrl: './task-list.component.html',
+  styleUrls: ['./task-list.component.css']
+})
+export class TaskListComponent implements OnInit {
+
+tasks:Task[]=[];
+
+  newTask:any = {
+    id:0,
+    title:"",
+    description:""
+  }
+
+  constructor(private selectedTask:TaskService) {
+   }
+
+  ngOnInit(): void {
+    this.loadTasks();
+  }
+
+  addTask(form:NgForm){
+    console.warn(this.newTask);
+    this.selectedTask.addTask(this.newTask);
+
+  }
+
+  loadTasks(){
+    this.selectedTask.getTasks().subscribe((data)=>{
+      console.warn("data:", data);
+      this.tasks = data;
+    })
+  }
+}
