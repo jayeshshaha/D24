@@ -1,0 +1,295 @@
+Model
+--------------------------------------------------------------------------------
+
+export interface Product{
+    id?:number;
+    name?:string;
+    category?:string;
+    price?:number;
+    description?:string;
+}
+
+Service
+--------------------------------------------------------------------------------
+
+import { HttpClient } from '@angular/common/http';
+import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
+import { Product } from '../model/product.model';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class ProductService {
+  
+  public baseUrl = "https://ide-faaeeafddb313127068ebdcbdfcddcfbone.premiumproject.examly.io/proxy/3001/product";
+  constructor(private http:HttpClient) { }
+
+  getAllProducts():Observable<Product[]>{
+    return this.http.get<Product[]>(this.baseUrl);
+  }
+
+  addProduct(product:Product){
+    const jsonProduct = {
+      "id": product.id,
+      "name": product.name,
+      "category": product.category,
+      "price": product.price,
+      "description": product.description
+    };
+    return this.http.post<Product>(this.baseUrl,jsonProduct);
+  }
+
+  getProductById(id:number){
+    return this.http.get<Product>(`${this.baseUrl}/${id}`);
+  }
+}
+
+add-product.html
+--------------------------------------------------------------------------------
+
+<!-- <p>add-product works!</p> -->
+<h2>Add Product</h2>
+
+<form #formData="ngForm" (ngSubmit)="addProduct(formData)" >
+    <div>
+        <label for="productName">Product Name:</label>
+        <br>
+        <input type="text" name="name" [(ngModel)]="product.name" ngModel >
+    </div>
+    <div>
+        <label for="productCategory">Product Category :</label>
+        <br>
+        <input type="text" name="category" [(ngModel)]="product.category" ngModel >
+    </div>
+    <div>
+        <label for="productPrice">Product Price:</label>
+        <br>
+        <input type="number" name="price" [(ngModel)]="product.price" ngModel >
+    </div>
+    <div>
+        <label for="productDescription">Product Description:</label>
+        <br>
+        <textarea name="description" [(ngModel)]="product.description" ngModel  cols="30" rows="7"></textarea>
+    </div>
+    <br>
+    <button type="submit"  >Add Product</button>
+</form>
+
+add-product.ts
+--------------------------------------------------------------------------------
+
+import { Component, OnInit } from '@angular/core';
+import { Product } from '../model/product.model';
+import { NgForm } from '@angular/forms';
+import { ProductService } from '../services/product.service';
+import { Router } from '@angular/router';
+
+@Component({
+  selector: 'app-add-product',
+  templateUrl: './add-product.component.html',
+  styleUrls: ['./add-product.component.css']
+})
+export class AddProductComponent implements OnInit {
+
+  product:Product = {
+    id:0,
+    name:"",
+    category:"",
+    price:0,
+    description:"",
+  }
+
+  constructor(private service:ProductService, private router:Router) { }
+
+  ngOnInit(): void {
+  }
+
+  addProduct(form:NgForm){
+    console.log(form.value);
+    this.service.addProduct(form.value).subscribe((res)=>{
+      console.log(res);
+      console.log('product added');
+      this.router.navigate(['']);
+      
+    })
+  }
+
+}
+
+product-list.html
+--------------------------------------------------------------------------------
+
+<p>product-list works!</p>
+<h2>Product List </h2>
+<div *ngIf="products.length > 0">
+    <ul>
+        <li *ngFor="let i of products">{{i.name}} - Category:{{i.category}} | <a (click)="displayProduct(i.id)" >View</a></li>
+    </ul>
+</div>
+
+<div *ngIf="!products">
+    <p>No products available</p>
+</div>
+
+<a [routerLink]="['/products/add']" >Add Product</a>
+
+product-list.ts
+--------------------------------------------------------------------------------
+
+import { Component, OnInit } from '@angular/core';
+import { ProductService } from '../services/product.service';
+import { Product } from '../model/product.model';
+import { Router } from '@angular/router';
+
+@Component({
+  selector: 'app-product-list',
+  templateUrl: './product-list.component.html',
+  styleUrls: ['./product-list.component.css']
+})
+export class ProductListComponent implements OnInit {
+
+  constructor(private service:ProductService, private router:Router) { }
+
+  products:Product[] = [];
+
+  ngOnInit(): void {
+    this.service.getAllProducts().subscribe((data) => {
+      this.products = data;
+    })
+  }
+
+  displayProduct(id:number){
+      this.router.navigate(["products/view",id]);
+  }
+
+}
+
+view-product.html
+--------------------------------------------------------------------------------
+
+<p>view-product works!</p>
+
+<h2>View Product. </h2>
+
+<table>
+    <tr>
+        <th>Id</th>
+        <td>{{product.id}}</td>
+    </tr>
+    <tr>
+        <th>Name:</th>
+        <td>{{product.name}}</td>
+    </tr>
+    <tr>
+        <th>Category:</th>
+        <td>{{product.category}}</td>
+    </tr>
+    <tr>
+        <th>Price</th>
+        <td>{{product.price}}</td>
+    </tr>
+    <tr>
+        <th>Description</th>
+        <td>{{product.description}}</td>
+    </tr>
+</table>
+
+
+
+view-product.ts
+--------------------------------------------------------------------------------
+
+import { Component, OnInit } from '@angular/core';
+import { ProductService } from '../services/product.service';
+import { ActivatedRoute } from '@angular/router';
+import { Product } from '../model/product.model';
+
+
+@Component({
+  selector: 'app-view-product',
+  templateUrl: './view-product.component.html',
+  styleUrls: ['./view-product.component.css']
+})
+export class ViewProductComponent implements OnInit {
+
+  productId:number = 0;
+  constructor(private service:ProductService,private activatedRoute:ActivatedRoute) { }
+
+  product:Product = {};
+
+  ngOnInit(): void {
+    this.activatedRoute.params.subscribe((param) => {
+      this.productId = param['id'];
+    })
+
+    this.service.getProductById(this.productId).subscribe((data)=>{
+        this.product = data;
+    })
+
+  }
+
+}
+
+
+Routing
+--------------------------------------------------------------------------------
+
+import { NgModule } from '@angular/core';
+import { Routes, RouterModule } from '@angular/router';
+
+import { ViewProductComponent } from './view-product/view-product.component';
+import { AddProductComponent } from './add-product/add-product.component';
+import { ProductListComponent } from './product-list/product-list.component';
+
+const routes: Routes = [
+  {path:'',component:ProductListComponent,pathMatch:'full'},
+  {path:'products/view/:id',component:ViewProductComponent},
+  {path:'products/add',component:AddProductComponent},
+];
+
+@NgModule({
+  imports: [RouterModule.forRoot(routes)],
+  exports: [RouterModule]
+})
+export class AppRoutingModule { }
+
+
+Module File
+--------------------------------------------------------------------------------
+
+import { BrowserModule } from '@angular/platform-browser';
+import { NgModule } from '@angular/core';
+
+import { AppRoutingModule } from './app-routing.module';
+import { AppComponent } from './app.component';
+import { AddProductComponent } from './add-product/add-product.component';
+import { ProductListComponent } from './product-list/product-list.component';
+import { ViewProductComponent } from './view-product/view-product.component';
+import { HttpClientModule } from "@angular/common/http";
+import { ProductService } from './services/product.service';
+import { FormsModule } from '@angular/forms';
+
+@NgModule({
+  declarations: [
+    AppComponent,
+    AddProductComponent,
+    ProductListComponent,
+    ViewProductComponent
+  ],
+  imports: [
+    BrowserModule,
+    AppRoutingModule,
+    HttpClientModule,
+    FormsModule
+  ],
+  providers: [ProductService],
+  bootstrap: [AppComponent]
+  
+})
+export class AppModule { }
+
+
+
+
+
